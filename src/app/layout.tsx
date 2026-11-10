@@ -1,20 +1,11 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { getAppIconUrl } from "@/lib/app-settings";
 
-export async function generateMetadata(): Promise<Metadata> {
-  const iconUrl = await getAppIconUrl();
-  return {
-    title: "Central de Cancelamentos - WG Colchões & Estofados",
-    description:
-      "Controle de cancelamentos, trocas, devoluções e correções de vendas",
-    icons: {
-      icon: iconUrl,
-      shortcut: iconUrl,
-      apple: iconUrl,
-    },
-  };
-}
+export const metadata: Metadata = {
+  title: "Cancelamentos · WG Hub",
+  description: "Controle de cancelamentos, trocas, devoluções e correções de vendas",
+  icons: { icon: "/cancelamentos/logo-icon.png" },
+};
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (

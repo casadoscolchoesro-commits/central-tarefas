@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { BUILD_ID } from "@/lib/build-id";
 
@@ -13,13 +12,11 @@ const DEFAULT_MESSAGE =
 export function MaintenanceGate({ initial, isAdmin }: { initial: State; isAdmin: boolean }) {
   const [state, setState] = useState<State>(initial);
   const [newVersion, setNewVersion] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const wasEnabledRef = useRef(initial.enabled);
 
   const checkVersion = useCallback(async () => {
     try {
-      const res = await fetch("/api/version", { cache: "no-store" });
+      const res = await fetch("/cancelamentos/versao.json", { cache: "no-store" });
       if (!res.ok) return;
       const { buildId } = (await res.json()) as { buildId?: string };
       if (buildId && buildId !== BUILD_ID) setNewVersion(true);
@@ -33,21 +30,22 @@ export function MaintenanceGate({ initial, isAdmin }: { initial: State; isAdmin:
   useEffect(() => {
     const supabase = createClient();
 
+    // Manutenção do WG Hub (vale para todos os módulos)
     async function refresh() {
-      const { data } = await supabase
-        .from("maintenance_mode")
-        .select("enabled, message")
+      const { data } = await supabase.schema("public").from("sistema_estado")
+        .select("manutencao, mensagem")
         .eq("id", 1)
         .maybeSingle();
-      if (data) setState({ enabled: data.enabled, message: data.message });
+      if (data) setState({ enabled: !!data.manutencao, message: data.mensagem ?? null });
     }
+    refresh();
 
     const channel = supabase
-      .channel("maintenance-mode")
-      .on("postgres_changes", { event: "*", schema: "public", table: "maintenance_mode" }, (payload) => {
-        const row = payload.new as Partial<State> | null;
-        if (row && typeof row.enabled === "boolean") {
-          setState({ enabled: row.enabled, message: row.message ?? null });
+      .channel("wg-manutencao")
+      .on("postgres_changes", { event: "*", schema: "public", table: "sistema_estado" }, (payload) => {
+        const row = payload.new as { manutencao?: boolean; mensagem?: string | null } | null;
+        if (row && typeof row.manutencao === "boolean") {
+          setState({ enabled: row.manutencao, message: row.mensagem ?? null });
         }
       })
       .subscribe();
@@ -71,19 +69,6 @@ export function MaintenanceGate({ initial, isAdmin }: { initial: State; isAdmin:
     if (wasEnabledRef.current && !state.enabled) checkVersion();
     wasEnabledRef.current = state.enabled;
   }, [state.enabled, checkVersion]);
-
-  async function handleRelease() {
-    setBusy(true);
-    setError(null);
-    const supabase = createClient();
-    const { error: rpcError } = await supabase.rpc("set_maintenance_mode", { p_enabled: false });
-    setBusy(false);
-    if (rpcError) {
-      setError(rpcError.message || "Não foi possível liberar agora.");
-      return;
-    }
-    setState((s) => ({ ...s, enabled: false }));
-  }
 
   // Usuário comum: quadro que cobre a tela inteira enquanto durar.
   if (state.enabled && !isAdmin) {
@@ -118,19 +103,9 @@ export function MaintenanceGate({ initial, isAdmin }: { initial: State; isAdmin:
           <span>
             <strong>Modo manutenção ligado</strong> — os usuários estão bloqueados. Você continua com acesso.
           </span>
-          <span className="flex items-center gap-3">
-            {error && <span className="text-xs text-(--color-red-700)">{error}</span>}
-            <Link href="/configuracoes/manutencao" className="text-xs underline">
-              Configurar aviso
-            </Link>
-            <button
-              onClick={handleRelease}
-              disabled={busy}
-              className="rounded-md bg-amber-900 px-3 py-1 text-xs font-medium text-white hover:bg-amber-800 disabled:opacity-60"
-            >
-              {busy ? "Liberando..." : "Liberar sistema"}
-            </button>
-          </span>
+          <a href="/#/manutencao" className="text-xs underline">
+            Liberar no WG Hub
+          </a>
         </div>
       )}
 

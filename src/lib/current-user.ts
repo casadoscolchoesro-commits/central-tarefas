@@ -38,10 +38,17 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   const supabase = await createClient();
 
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
+  const user = session?.user;
 
   if (!user) return null;
+
+  // perfil do módulo criado na primeira entrada de quem tem acesso (Usuários do WG Hub)
+  const { data: acesso } = await supabase.rpc("garantir_meu_perfil");
+  if (!acesso) {
+    throw new Error("Você não tem acesso ao módulo Cancelamentos. Peça ao administrador para liberar em Usuários do WG Hub (função Cancelamentos).");
+  }
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -63,6 +70,9 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
         .filter((r): r is RoleName => Boolean(r))
     )
   );
+
+  // o administrador do WG Hub é administrador no módulo
+  if ((acesso as { admin?: boolean }).admin && !roles.includes("administrador")) roles.push("administrador");
 
   return {
     id: profile.id,

@@ -8,4 +8,5 @@ writeFileSync(
   new URL("../src/lib/build-id.ts", import.meta.url),
   `// Gerado automaticamente por scripts/write-build-id.mjs a cada build.\nexport const BUILD_ID = "${buildId}";\n`
 );
+writeFileSync(new URL("../public/versao.json", import.meta.url), JSON.stringify({ buildId }));
 console.log("build id:", buildId);

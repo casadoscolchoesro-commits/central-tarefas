@@ -1,8 +1,9 @@
 "use client";
+import { ModulosWgHub } from "@/components/ModulosWgHub";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname } from "@/lib/navegacao";
 import type { NavItem } from "@/lib/nav";
 import { SignOutButton } from "@/components/SignOutButton";
 import { Avatar } from "@/components/Avatar";
@@ -62,7 +63,7 @@ export function DashboardNav({
       <div className="flex items-center justify-between border-b border-(--color-gray-200) bg-white px-4 py-2 lg:hidden">
         <Link href="/" className="flex items-center gap-2">
           <img
-            src="/wg-hub-logo.png"
+            src="/cancelamentos/wg-hub-logo.png"
             alt="WG HUB Cancelamentos"
             className="h-24 w-auto shrink-0"
           />
@@ -99,7 +100,7 @@ export function DashboardNav({
         >
           <Link href="/" className="flex items-center gap-2 overflow-hidden">
             <img
-              src={collapsed ? "/wg-hub-icon.png" : "/wg-hub-logo.png"}
+              src={collapsed ? "/cancelamentos/wg-hub-icon.png" : "/cancelamentos/wg-hub-logo.png"}
               alt="WG HUB Cancelamentos"
               className={collapsed ? "h-12 w-12 shrink-0 object-contain" : "h-24 w-auto shrink-0"}
             />
@@ -112,6 +113,8 @@ export function DashboardNav({
             <IconX className="h-5 w-5" />
           </button>
         </div>
+
+        <ModulosWgHub collapsed={hydrated && collapsed} />
 
         <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-3">
           {items.map((item) => {

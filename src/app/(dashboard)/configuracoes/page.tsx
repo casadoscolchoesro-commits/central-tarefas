@@ -119,28 +119,6 @@ const GROUPS: { title: string; cards: Card[] }[] = [
       },
     ],
   },
-  {
-    title: "Sistema",
-    cards: [
-      {
-        href: "/configuracoes/manutencao",
-        label: "Manutenção",
-        description: "Trava o sistema para os usuários durante uma atualização e libera depois.",
-        Icon: IconLock,
-      },
-    ],
-  },
-  {
-    title: "Aparência",
-    cards: [
-      {
-        href: "/configuracoes/identidade-visual",
-        label: "Identidade visual",
-        description: "Ícone do sistema (aba do navegador e menu lateral).",
-        Icon: IconImage,
-      },
-    ],
-  },
 ];
 
 export default function ConfiguracoesPage() {

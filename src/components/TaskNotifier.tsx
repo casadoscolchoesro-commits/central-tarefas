@@ -42,7 +42,7 @@ export function TaskNotifier({
       .channel("tasks-notify")
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "tasks" },
+        { event: "INSERT", schema: "cancelamentos", table: "tasks" },
         (payload) => {
           handleTask(payload.new as { id: string; department: TaskDepartment | null; status: string }, "tempo real");
         }

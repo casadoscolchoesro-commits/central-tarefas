@@ -1,0 +1,14 @@
+# Módulo Cancelamentos do WG Hub (site estático em /cancelamentos)
+RewriteEngine On
+RewriteBase /cancelamentos/
+# telas de detalhe: um só arquivo ("_") serve todos os números
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(protocolos|compras|configuracoes/tipos|configuracoes/usuarios)/([^/_][^/]*)/?(.*)$ $1/_/$3 [L]
+ErrorDocument 404 /cancelamentos/404.html
+# o navegador confere se o arquivo mudou a cada abertura (sem baixar de novo se não mudou)
+<IfModule mod_headers.c>
+<FilesMatch "\.(html|txt|json)$">
+Header set Cache-Control "no-cache"
+</FilesMatch>
+</IfModule>

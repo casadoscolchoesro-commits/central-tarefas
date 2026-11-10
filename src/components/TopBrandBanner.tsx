@@ -20,7 +20,7 @@ export function TopBrandBanner({
       }}
     >
       <ShakeableLogo
-        src="/logo-vermelhinha.png"
+        src="/cancelamentos/logo-vermelhinha.png"
         alt="A Gigante Vermelhinha — no tamanho do seu sonho"
         className="h-12 w-auto sm:h-14"
       />

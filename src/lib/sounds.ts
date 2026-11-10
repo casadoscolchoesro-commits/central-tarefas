@@ -43,13 +43,13 @@ function shakeLogo() {
 
 /** Som de "nova tarefa" para os setores. */
 export function playMessageSound() {
-  playFile("/sounds/new-task.mp3");
+  playFile("/cancelamentos/sounds/new-task.mp3");
   shakeLogo();
 }
 
 /** Som de "cutucada" (nudge/alerta) enviado por um gerente ou administrador. */
 export function playNudgeSound() {
-  playFile("/sounds/nudge.mp3");
+  playFile("/cancelamentos/sounds/nudge.mp3");
   shakeLogo();
 }
 
@@ -63,7 +63,7 @@ let unlocked = false;
 export function unlockAudio() {
   if (unlocked || typeof window === "undefined") return;
   unlocked = true;
-  for (const src of ["/sounds/nudge.mp3", "/sounds/new-task.mp3"]) {
+  for (const src of ["/cancelamentos/sounds/nudge.mp3", "/cancelamentos/sounds/new-task.mp3"]) {
     const el = getAudioEl(src);
     if (!el) continue;
     const originalVolume = el.volume;

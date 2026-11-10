@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/lib/navegacao";
 
 export function MarkPurchasingViewedOnMount({ requestId }: { requestId: string }) {
   const router = useRouter();

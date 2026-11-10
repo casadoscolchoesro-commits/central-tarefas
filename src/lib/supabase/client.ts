@@ -1,11 +1,15 @@
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabase-config";
-import { createBrowserClient } from "@supabase/ssr";
+import { createClient as criar, type SupabaseClient } from "@supabase/supabase-js";
+import { SUPABASE_URL, SUPABASE_ANON_KEY, STORAGE_KEY } from "@/lib/supabase-config";
 
-// Cliente Supabase para uso em componentes client-side ("use client").
-// Usa a chave publishable (anon) — nunca a service role aqui.
+// Um único cliente no navegador, na sessão do WG Hub, lendo o esquema `cancelamentos`.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let cliente: SupabaseClient<any, "cancelamentos", any> | null = null;
 export function createClient() {
-  return createBrowserClient(
-    SUPABASE_URL,
-    SUPABASE_ANON_KEY
-  );
+  if (!cliente) {
+    cliente = criar(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      db: { schema: "cancelamentos" },
+      auth: { storageKey: STORAGE_KEY, persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
+    });
+  }
+  return cliente;
 }

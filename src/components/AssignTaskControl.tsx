@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/lib/navegacao";
 import { createClient } from "@/lib/supabase/client";
 
 type UserOption = { id: string; full_name: string };

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/lib/navegacao";
 import { createClient } from "@/lib/supabase/client";
 import { DEPARTMENT_LABELS, type TaskDepartment } from "@/lib/departments";
 import { departmentBadgeClass } from "@/lib/department-colors";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/lib/navegacao";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { DEPARTMENT_LABELS, type TaskDepartment } from "@/lib/departments";
@@ -441,39 +441,6 @@ export function UserManager({
             {selectedIds.size} selecionado(s)
           </span>
           <button
-            onClick={handleBulkDeactivate}
-            disabled={bulkBusy}
-            className="rounded-md border border-(--color-gray-200) bg-white px-2.5 py-1 text-xs text-(--color-graphite-700) hover:bg-(--color-gray-100) disabled:opacity-60"
-          >
-            {bulkBusy ? "..." : "Inativar selecionados"}
-          </button>
-          {confirmBulkDelete ? (
-            <span className="flex items-center gap-2">
-              <span className="text-xs text-(--color-red-700)">Excluir de vez os selecionados?</span>
-              <button
-                onClick={handleBulkDelete}
-                disabled={bulkBusy}
-                className="rounded-md bg-(--color-red-600) px-2.5 py-1 text-xs font-medium text-white hover:bg-(--color-red-700) disabled:opacity-60"
-              >
-                {bulkBusy ? "Excluindo..." : "Sim, excluir"}
-              </button>
-              <button
-                onClick={() => setConfirmBulkDelete(false)}
-                disabled={bulkBusy}
-                className="text-xs text-(--color-graphite-500) hover:text-(--color-red-600)"
-              >
-                Cancelar
-              </button>
-            </span>
-          ) : (
-            <button
-              onClick={() => setConfirmBulkDelete(true)}
-              className="text-xs text-(--color-graphite-500) hover:text-(--color-red-600)"
-            >
-              Excluir selecionados
-            </button>
-          )}
-          <button
             onClick={() => setSelectedIds(new Set())}
             className="ml-auto text-xs text-(--color-graphite-500) hover:text-(--color-red-600)"
           >
@@ -547,38 +514,6 @@ export function UserManager({
                         <button onClick={() => setExpandedId(isExpanded ? null : p.id)} className="text-xs text-(--color-graphite-500) hover:text-(--color-red-600)">
                           {isExpanded ? "Fechar" : "Gerenciar acesso"}
                         </button>
-                        <button onClick={() => handleToggleActive(p)} disabled={busyKey === p.id} className="text-xs text-(--color-graphite-500) hover:text-(--color-red-600) disabled:opacity-60">
-                          {p.active ? "Desativar" : "Ativar"}
-                        </button>
-                        {confirmDeleteId === p.id ? (
-                          <span className="flex items-center gap-2">
-                            <span className="text-xs text-(--color-red-700)">Excluir de vez?</span>
-                            <button
-                              onClick={() => handleDelete(p)}
-                              disabled={busyKey === `delete:${p.id}`}
-                              className="rounded-md bg-(--color-red-600) px-2 py-1 text-xs font-medium text-white hover:bg-(--color-red-700) disabled:opacity-60"
-                            >
-                              {busyKey === `delete:${p.id}` ? "Excluindo..." : "Sim"}
-                            </button>
-                            <button
-                              onClick={() => setConfirmDeleteId(null)}
-                              disabled={busyKey === `delete:${p.id}`}
-                              className="text-xs text-(--color-graphite-500) hover:text-(--color-red-600)"
-                            >
-                              Cancelar
-                            </button>
-                          </span>
-                        ) : (
-                          <button
-                            onClick={() => {
-                              setConfirmDeleteId(p.id);
-                              setDeleteErrorId(null);
-                            }}
-                            className="text-xs text-(--color-graphite-500) hover:text-(--color-red-600)"
-                          >
-                            Excluir
-                          </button>
-                        )}
                       </div>
                     </div>
                   </div>
@@ -720,103 +655,9 @@ export function UserManager({
                         </div>
                       </div>
 
-                      <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                        <div className="sm:col-span-2">
-                          <p className="mb-1.5 text-xs font-medium text-(--color-graphite-700)">
-                            Cadastro
-                          </p>
-                          {editingNameId === p.id ? (
-                            <div className="flex flex-wrap items-center gap-1.5">
-                              <input
-                                value={nameInput}
-                                onChange={(e) => setNameInput(e.target.value)}
-                                placeholder="Nome completo"
-                                autoFocus
-                                className="rounded-md border border-(--color-gray-200) px-2 py-1.5 text-sm outline-none focus:border-(--color-red-600)"
-                              />
-                              <input
-                                type="email"
-                                value={emailInput}
-                                onChange={(e) => setEmailInput(e.target.value)}
-                                placeholder="E-mail"
-                                className="rounded-md border border-(--color-gray-200) px-2 py-1.5 text-sm outline-none focus:border-(--color-red-600)"
-                              />
-                              <button
-                                onClick={() => handleProfileEdit(p, nameInput, emailInput)}
-                                disabled={busyKey === p.id}
-                                className="rounded-md bg-(--color-red-600) px-3 py-1.5 text-xs font-medium text-white hover:bg-(--color-red-700) disabled:opacity-60"
-                              >
-                                {busyKey === p.id ? "Salvando..." : "Salvar"}
-                              </button>
-                              <button
-                                onClick={() => setEditingNameId(null)}
-                                className="rounded-md border border-(--color-gray-200) bg-white px-3 py-1.5 text-xs text-(--color-graphite-700) hover:bg-(--color-gray-50)"
-                              >
-                                Cancelar
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => {
-                                setEditingNameId(p.id);
-                                setNameInput(p.full_name);
-                                setEmailInput(p.email);
-                              }}
-                              className="rounded-md border border-(--color-gray-200) bg-white px-3 py-1.5 text-xs font-medium text-(--color-graphite-700) hover:bg-(--color-gray-50) hover:text-(--color-red-600)"
-                            >
-                              Editar Cadastro
-                            </button>
-                          )}
-                          <p className="mt-1 text-xs text-(--color-graphite-500)">
-                            Nome e e-mail de login. Filial fica no campo &quot;Filial de origem&quot;, logo abaixo.
-                          </p>
-                        </div>
-
-                        <div>
-                          <p className="mb-1.5 text-xs font-medium text-(--color-graphite-700)">
-                            Senha de acesso
-                          </p>
-                          {editingPasswordId === p.id ? (
-                            <div className="flex items-center gap-1.5">
-                              <input
-                                type="text"
-                                value={newPasswordInput}
-                                onChange={(e) => setNewPasswordInput(e.target.value)}
-                                placeholder="mín. 8 caracteres"
-                                autoFocus
-                                className="rounded-md border border-(--color-gray-200) px-2 py-1.5 text-sm outline-none focus:border-(--color-red-600)"
-                              />
-                              <button
-                                onClick={() => handleSetPassword(p, newPasswordInput)}
-                                disabled={busyKey === p.id}
-                                className="rounded-md bg-(--color-red-600) px-3 py-1.5 text-xs font-medium text-white hover:bg-(--color-red-700) disabled:opacity-60"
-                              >
-                                {busyKey === p.id ? "Salvando..." : "Salvar"}
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setEditingPasswordId(null);
-                                  setNewPasswordInput("");
-                                }}
-                                className="rounded-md border border-(--color-gray-200) bg-white px-3 py-1.5 text-xs text-(--color-graphite-700) hover:bg-(--color-gray-50)"
-                              >
-                                Cancelar
-                              </button>
-                            </div>
-                          ) : passwordSetId === p.id ? (
-                            <span className="text-xs font-medium text-emerald-700">
-                              Senha redefinida!
-                            </span>
-                          ) : (
-                            <button
-                              onClick={() => setEditingPasswordId(p.id)}
-                              className="rounded-md border border-(--color-gray-200) bg-white px-3 py-1.5 text-xs font-medium text-(--color-graphite-700) hover:bg-(--color-gray-50) hover:text-(--color-red-600)"
-                            >
-                              Nova senha
-                            </button>
-                          )}
-                        </div>
-                      </div>
+                      <p className="mt-3 text-xs text-(--color-graphite-500)">
+                        Nome, e-mail, senha e o acesso ao módulo ficam em Usuários do WG Hub (função Cancelamentos).
+                      </p>
                     </div>
                   )}
                 </li>

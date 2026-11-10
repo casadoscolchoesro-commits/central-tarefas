@@ -64,3 +64,13 @@ registro é um item permanente e rastreável.
 Nova solicitação manual, cadastro de venda/cliente/itens/pagamentos,
 cancelamento total e parcial, detecção de duplicidade, central e
 detalhe do protocolo, histórico.
+
+## Módulo Cancelamentos do WG Hub (nov/2026)
+
+Este app passou a rodar como **site estático em `/cancelamentos`**, dentro do WG Hub (mesmo login, banco do WG Hub, esquema `cancelamentos`).
+
+- `npm run build` gera a pasta `out/`, que é publicada em `public_html/.../cancelamentos/` (inclui o `.htaccess`).
+- As telas leem os dados no navegador (`src/lib/tela-cliente.tsx`), com as regras de acesso do banco.
+- Login, cadastro de usuário, senha, manutenção e identidade visual ficam no WG Hub.
+- O acesso ao módulo é a função "Cancelamentos" (`canc_acesso`) em Usuários do WG Hub; papéis, filiais e cargo continuam em Configurações → Usuários do módulo.
+- SQL da estrutura e da cópia: repositório `controle-pedidos`, pasta `sql/cancelamentos/`.

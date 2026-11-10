@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/lib/navegacao";
 import { createClient } from "@/lib/supabase/client";
 
 export function RealtimeListRefresher({
@@ -24,7 +24,7 @@ export function RealtimeListRefresher({
       .channel(channelName)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table, ...(filter ? { filter } : {}) },
+        { event: "*", schema: "cancelamentos", table, ...(filter ? { filter } : {}) },
         () => {
           // Várias mudanças podem chegar quase juntas (ex.: aprovar um
           // protocolo gera várias tarefas de uma vez) — agrupa num só

@@ -90,7 +90,7 @@ export function NudgeListener({
       .channel("nudges-notify")
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "nudges" },
+        { event: "INSERT", schema: "cancelamentos", table: "nudges" },
         (payload) => {
           handleNudge(payload.new as NudgeRow, "tempo real");
         }

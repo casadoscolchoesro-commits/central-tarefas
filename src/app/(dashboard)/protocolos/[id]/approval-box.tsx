@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/lib/navegacao";
 import { createClient } from "@/lib/supabase/client";
 
 const DECISION_LABELS: Record<string, string> = {

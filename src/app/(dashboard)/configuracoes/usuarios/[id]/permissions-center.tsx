@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/lib/navegacao";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { ROLE_LABELS } from "@/lib/role-labels";

@@ -59,7 +59,7 @@ export function PurchasingResponsesButton({ currentUserId }: { currentUserId: st
       .channel("purchasing-responses-badge")
       .on(
         "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "purchasing_requests", filter: `requested_by=eq.${currentUserId}` },
+        { event: "UPDATE", schema: "cancelamentos", table: "purchasing_requests", filter: `requested_by=eq.${currentUserId}` },
         (payload) => {
           const row = payload.new as { id: string; status: string; viewed_at: string | null };
           if (row.status === "concluido" && !row.viewed_at && !soundedIdsRef.current.has(row.id)) {

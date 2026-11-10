@@ -17,7 +17,7 @@ export function ApprovalNotifier({ myRoles }: { myRoles: RoleName[] }) {
       .channel("approvals-notify")
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "approvals" },
+        { event: "INSERT", schema: "cancelamentos", table: "approvals" },
         (payload) => {
           const row = payload.new as { required_role: RoleName; status: string };
           if (row.status !== "pendente") return;

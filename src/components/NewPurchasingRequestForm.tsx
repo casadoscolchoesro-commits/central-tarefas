@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/lib/navegacao";
 import { createClient } from "@/lib/supabase/client";
 
 type Kind = "preco_custo" | "cadastro" | "prazo_encomenda";

@@ -1,3 +1,6 @@
+"use client";
+import { useState } from "react";
+import { BASE } from "@/lib/supabase-config";
 import Link from "next/link";
 
 export const PRESETS = [
@@ -111,16 +114,31 @@ export function DownloadPdfButton({
   fromStr: string;
   toStr: string;
 }) {
-  const href = `/api/relatorios/pdf?type=${type}&from=${fromStr}&to=${toStr}`;
+  const [gerando, setGerando] = useState(false);
+  async function baixar() {
+    setGerando(true);
+    try {
+      const { gerarRelatorioPdf } = await import("@/lib/pdf/gerar-relatorio");
+      const blob = await gerarRelatorioPdf(type, fromStr, toStr);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `relatorio-${type}.pdf`; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (e) {
+      alert("Não foi possível gerar o PDF: " + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setGerando(false);
+    }
+  }
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-flex items-center gap-1.5 rounded-md border border-(--color-gray-200) bg-white px-3 py-2 text-sm text-(--color-graphite-700) hover:border-(--color-red-600) hover:text-(--color-red-600)"
+    <button
+      type="button"
+      onClick={baixar}
+      disabled={gerando}
+      className="inline-flex items-center gap-1.5 rounded-md border border-(--color-gray-200) bg-white px-3 py-2 text-sm text-(--color-graphite-700) hover:border-(--color-red-600) hover:text-(--color-red-600) disabled:opacity-60"
     >
-      Baixar PDF
-    </a>
+      {gerando ? "Gerando PDF…" : "Baixar PDF"}
+    </button>
   );
 }
 
@@ -137,7 +155,7 @@ export function DateFilterForm({
 }) {
   return (
     <form
-      action={basePath}
+      action={BASE + basePath}
       className="flex flex-wrap items-end gap-3 rounded-lg border border-(--color-gray-200) bg-white p-4"
     >
       <div>
@@ -177,7 +195,7 @@ export function DateFilterForm({
           return (
             <a
               key={p.label}
-              href={`${basePath}?from=${presetFrom}&to=${presetTo}`}
+              href={`${BASE}${basePath}?from=${presetFrom}&to=${presetTo}`}
               className="rounded-full border border-(--color-gray-200) px-3 py-1.5 text-(--color-graphite-700) hover:border-(--color-red-600) hover:text-(--color-red-600)"
             >
               {p.label}

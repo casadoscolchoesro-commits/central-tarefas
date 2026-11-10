@@ -1,31 +1,7 @@
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabase-config";
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+// O módulo roda como site estático: as telas leem os dados no navegador, com a sessão
+// do WG Hub e as mesmas regras de acesso do banco. Mantido com o mesmo nome para as telas.
+import { createClient as clienteNavegador } from "@/lib/supabase/client";
 
-// Cliente Supabase para uso em Server Components, Route Handlers e Server Actions.
 export async function createClient() {
-  const cookieStore = await cookies();
-
-  return createServerClient(
-    SUPABASE_URL,
-    SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
-          } catch {
-            // Chamado a partir de um Server Component sem permissão de
-            // escrita de cookies — seguro ignorar quando há middleware
-            // renovando a sessão.
-          }
-        },
-      },
-    }
-  );
+  return clienteNavegador();
 }

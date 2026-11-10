@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/lib/navegacao";
 import { createClient } from "@/lib/supabase/client";
 import { ProtocolBadge } from "@/components/ProtocolBadge";
 import { PdfImportBox } from "./pdf-import-box";
