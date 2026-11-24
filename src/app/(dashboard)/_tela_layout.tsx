@@ -8,8 +8,9 @@ import { TaskNotifier } from "@/components/TaskNotifier";
 import { NudgeListener } from "@/components/NudgeListener";
 import { ApprovalNotifier } from "@/components/ApprovalNotifier";
 import { AudioUnlockListener } from "@/components/AudioUnlockListener";
-import { DashboardNav } from "@/components/DashboardNav";
-import { TopBrandBanner } from "@/components/TopBrandBanner";
+import { DashboardNav, WgTopbar } from "@/components/DashboardNav";
+import { PurchasingResponsesButton } from "@/components/PurchasingResponsesButton";
+import { NudgeHistoryButton } from "@/components/NudgeHistoryButton";
 import { MaintenanceGate } from "@/components/MaintenanceGate";
 import { createClient } from "@/lib/supabase/server";
 import { getAppIconUrl } from "@/lib/app-settings";
@@ -53,39 +54,36 @@ async function DashboardLayout({
     .maybeSingle();
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="min-h-screen">
       <MaintenanceGate
         initial={{ enabled: maintenance?.manutencao ?? false, message: maintenance?.mensagem ?? null }}
         isAdmin={user.roles.includes("administrador")}
       />
-      <TopBrandBanner
+      <TaskNotifier myDepartments={myDepartments} />
+      <NudgeListener
         currentUserId={user.id}
         myDepartments={myDepartments}
         myJobTitleId={myProfile?.job_title_id ?? null}
       />
-      <div className="flex flex-1 flex-col lg:flex-row">
-        <TaskNotifier myDepartments={myDepartments} />
-        <NudgeListener
-          currentUserId={user.id}
-          myDepartments={myDepartments}
-          myJobTitleId={myProfile?.job_title_id ?? null}
-        />
-        <ApprovalNotifier myRoles={user.roles} />
-        <AudioUnlockListener />
-        <DashboardNav
-          items={items}
-          fullName={user.fullName}
-          rolesText={user.roles.map((r) => ROLE_LABELS[r]).join(", ")}
-          iconUrl={iconUrl}
-          avatarUrl={myProfile?.avatar_url ?? null}
-        />
-        <main
-          className="flex-1 px-4 py-4 lg:px-8 lg:py-6"
-          style={{
-            background:
-              "radial-gradient(120% 60% at 15% 0%, rgba(185,28,60,0.05) 0%, rgba(255,255,255,0) 55%), linear-gradient(180deg, #ffffff 0%, #fbfaf9 100%)",
-          }}
-        >
+      <ApprovalNotifier myRoles={user.roles} />
+      <AudioUnlockListener />
+      <DashboardNav
+        items={items}
+        fullName={user.fullName}
+        rolesText={user.roles.map((r) => ROLE_LABELS[r]).join(", ")}
+        iconUrl={iconUrl}
+        avatarUrl={myProfile?.avatar_url ?? null}
+      />
+      <div className="wg-main">
+        <WgTopbar>
+          <PurchasingResponsesButton currentUserId={user.id} />
+          <NudgeHistoryButton
+            currentUserId={user.id}
+            myDepartments={myDepartments}
+            myJobTitleId={myProfile?.job_title_id ?? null}
+          />
+        </WgTopbar>
+        <main className="flex-1 px-4 py-4 lg:px-8 lg:py-6" style={{ background: "#f6f5f5" }}>
           {children}
         </main>
       </div>

@@ -1,14 +1,16 @@
 "use client";
-import { ModulosWgHub } from "@/components/ModulosWgHub";
+// Menu lateral igual ao do WG Hub: recolhido por padrão, abre ao passar o
+// mouse; a setinha fixa/recolhe (preferência "menuFixo", a mesma do WG Hub);
+// no celular vira gaveta, aberta pelo botão da barra do topo.
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "@/lib/navegacao";
-import type { NavItem } from "@/lib/nav";
-import { SignOutButton } from "@/components/SignOutButton";
+import type { NavItem, NavIconKey } from "@/lib/nav";
+import { createClient } from "@/lib/supabase/client";
 import { Avatar } from "@/components/Avatar";
-import { IconMenu, IconX, IconChevronsLeft, IconChevronsRight, IconGrid, IconPlusCircle, IconTicket, IconCheckShield, IconCheckCircle, IconChart, IconSettings, IconCart } from "@/lib/protocol-icons";
-import type { NavIconKey } from "@/lib/nav";
+import { ShakeableLogo } from "@/components/ShakeableLogo";
+import { IconGrid, IconPlusCircle, IconTicket, IconCheckShield, IconCheckCircle, IconChart, IconSettings, IconCart } from "@/lib/protocol-icons";
 
 const NAV_ICONS: Record<NavIconKey, (p: { className?: string }) => React.ReactElement> = {
   grid: IconGrid,
@@ -21,163 +23,162 @@ const NAV_ICONS: Record<NavIconKey, (p: { className?: string }) => React.ReactEl
   cart: IconCart,
 };
 
-const COLLAPSE_STORAGE_KEY = "sidebar-collapsed";
+// Módulos do WG Hub, na mesma ordem, nomes e ícones do seletor do WG Hub.
+const SVG = (d: string) =>
+  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+const MODULOS: Record<string, { nome: string; curto: string; href: string; ico: string }> = {
+  pedidos: { nome: "Controle de Pedidos", curto: "Pedidos", href: "/", ico: SVG('<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/>') },
+  logistica: { nome: "Logística", curto: "Logística", href: "/", ico: SVG('<rect x="1" y="5" width="14" height="11" rx="1"/><path d="M15 9h4l3 3v4h-7z"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/>') },
+  sac: { nome: "SAC · Assistência", curto: "SAC", href: "/sac/", ico: SVG('<path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1v-6h3v4zM3 19a2 2 0 0 0 2 2h1v-6H3v4z"/>') },
+  cancelamentos: { nome: "Cancelamentos", curto: "Cancel.", href: "/cancelamentos/", ico: SVG('<path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 3 3 9 9 9"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/>') },
+  validlink: { nome: "ValidLink · Compras por link", curto: "ValidLink", href: "/", ico: SVG('<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/>') },
+  financeiro: { nome: "Financeiro", curto: "Financeiro", href: "/", ico: SVG('<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 12h.01M18 12h.01"/>') },
+};
+
+function useModulos(): string[] {
+  const [mods, setMods] = useState<string[]>(["cancelamentos"]);
+  useEffect(() => {
+    let lista: string[] | null = null;
+    try { lista = JSON.parse(localStorage.getItem("modulosPermitidos") || "null"); } catch {}
+    const ordem = Object.keys(MODULOS);
+    const sel = (lista ?? []).filter((m) => MODULOS[m]);
+    if (!sel.includes("cancelamentos")) sel.push("cancelamentos");
+    sel.sort((a, b) => ordem.indexOf(a) - ordem.indexOf(b));
+    setMods(sel);
+  }, []);
+  return mods;
+}
+
+// Liga o modo recolhido no <body> (como o WG Hub) e fecha a gaveta ao trocar de tela.
+export function useMenuWgHub() {
+  const pathname = usePathname();
+  useEffect(() => {
+    let fixo = false;
+    try { fixo = localStorage.getItem("menuFixo") === "1"; } catch {}
+    document.body.classList.toggle("sb-mini", !fixo);
+  }, []);
+  useEffect(() => {
+    document.body.classList.remove("sb-aberta");
+  }, [pathname]);
+  useEffect(() => {
+    function fora(ev: MouseEvent) {
+      if (!document.body.classList.contains("sb-aberta")) return;
+      const t = ev.target as HTMLElement;
+      if (t.closest(".wg-sidebar") || t.closest(".wg-menu-mobile")) return;
+      document.body.classList.remove("sb-aberta");
+    }
+    document.addEventListener("click", fora);
+    return () => document.removeEventListener("click", fora);
+  }, []);
+}
+
+function alternarMenu() {
+  document.body.classList.toggle("sb-mini");
+  try { localStorage.setItem("menuFixo", document.body.classList.contains("sb-mini") ? "0" : "1"); } catch {}
+}
+
+async function sair() {
+  await createClient().auth.signOut();
+  // sai do WG Hub inteiro (mesma sessão)
+  window.location.href = "/";
+}
 
 export function DashboardNav({
   items,
   fullName,
   rolesText,
-  iconUrl,
   avatarUrl,
 }: {
   items: NavItem[];
   fullName: string;
   rolesText: string;
-  iconUrl: string;
+  iconUrl?: string;
   avatarUrl: string | null;
 }) {
-  const [open, setOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
   const pathname = usePathname();
+  const mods = useModulos();
+  useMenuWgHub();
 
-  // Lê a preferência salva só depois de montar, pra não conflitar com o
-  // HTML gerado no servidor (evita flash/erro de hidratação).
-  useEffect(() => {
-    const saved = window.localStorage.getItem(COLLAPSE_STORAGE_KEY);
-    if (saved === "1") setCollapsed(true);
-    setHydrated(true);
-  }, []);
-
-  function toggleCollapsed() {
-    setCollapsed((prev) => {
-      const next = !prev;
-      window.localStorage.setItem(COLLAPSE_STORAGE_KEY, next ? "1" : "0");
-      return next;
-    });
-  }
+  const ativo = (href: string) =>
+    href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href + "/");
+  // "Central de protocolos" não fica marcada junto com "Nova solicitação"
+  const marcado = (href: string) =>
+    ativo(href) && !items.some((o) => o.href !== href && o.href.startsWith(href + "/") && ativo(o.href));
 
   return (
-    <>
-      {/* Barra superior — só no mobile */}
-      <div className="flex items-center justify-between border-b border-(--color-gray-200) bg-white px-4 py-2 lg:hidden">
-        <Link href="/" className="flex items-center gap-2">
-          <img
-            src="/cancelamentos/wg-hub-logo.png"
-            alt="WG HUB Cancelamentos"
-            className="h-24 w-auto shrink-0"
-          />
+    <aside className="wg-sidebar">
+      <button className="wg-toggle" title="Fixar / recolher o menu" onClick={alternarMenu}>
+        <svg viewBox="0 0 24 24" fill="none" strokeWidth="2.2" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+      </button>
+      <Link className="wg-brand" href="/" title="Painel">
+        <div className="wg-banner">
+          <ShakeableLogo src="/cancelamentos/sb-arte.png" alt="A Gigante Vermelhinha" />
+        </div>
+        <div className="wg-sub">Casa dos Colchões · Cancelamentos</div>
+        <div className="wg-mini-logo"><img src="/cancelamentos/sb-mini-logo.png" alt="Grupo WG" /></div>
+      </Link>
+
+      <nav className="wg-nav">
+        {mods.length > 1 ? (
+          <div className="wg-mods" style={{ ["--mods-col" as string]: mods.length <= 3 ? mods.length : mods.length === 4 ? 2 : 3 }}>
+            {mods.map((m) => (
+              <a
+                key={m}
+                className={m === "cancelamentos" ? "on" : ""}
+                href={MODULOS[m].href}
+                title={MODULOS[m].nome}
+                onClick={() => { try { localStorage.setItem("moduloAtual", m); } catch {} }}
+              >
+                <span style={{ display: "flex" }} dangerouslySetInnerHTML={{ __html: MODULOS[m].ico }} />
+                <span className="wg-label">{MODULOS[m].curto}</span>
+              </a>
+            ))}
+          </div>
+        ) : (
+          <div className="wg-sep">Cancelamentos</div>
+        )}
+        {items.map((item) => {
+          const ItemIcon = NAV_ICONS[item.iconKey];
+          return (
+            <Link key={item.href} href={item.href} title={item.label} className={`wg-item ${marcado(item.href) ? "ativo" : ""}`}>
+              <ItemIcon />
+              <span className="wg-label">{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div className="wg-foot">
+        <Link href="/perfil" title="Meu perfil" style={{ display: "flex" }}>
+          <Avatar url={avatarUrl} name={fullName} size={32} />
         </Link>
-        <button
-          onClick={() => setOpen(true)}
-          aria-label="Abrir menu"
-          className="rounded-md p-2 text-(--color-graphite-700) hover:bg-(--color-gray-50)"
-        >
-          <IconMenu className="h-5 w-5" />
+        <Link href="/perfil" className="wg-user" title="Meu perfil">
+          <b>{fullName}</b>
+          <small>{rolesText}</small>
+        </Link>
+        <button className="wg-icon-btn" title="Sair" onClick={sair}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
         </button>
       </div>
-
-      {/* Fundo escurecido atrás do menu, só quando aberto no mobile */}
-      {open && (
-        <div
-          className="fixed inset-0 z-40 bg-black/30 lg:hidden"
-          onClick={() => setOpen(false)}
-          aria-hidden="true"
-        />
-      )}
-
-      {/* Menu lateral — vira gaveta deslizante no mobile, fixo no desktop.
-          No desktop, pode ser recolhido para uma faixa só de ícones. */}
-      <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-60 shrink-0 flex-col border-r border-(--color-gray-200) bg-white transition-[transform,width] duration-200 ease-out lg:static lg:z-auto lg:translate-x-0 ${
-          open ? "translate-x-0" : "-translate-x-full"
-        } ${hydrated && collapsed ? "lg:w-16" : "lg:w-52"}`}
-      >
-        <div
-          className={`flex items-center gap-2 border-b border-(--color-gray-200) px-4 py-4 ${
-            collapsed ? "lg:justify-center lg:px-2" : "justify-between"
-          }`}
-        >
-          <Link href="/" className="flex items-center gap-2 overflow-hidden">
-            <img
-              src={collapsed ? "/cancelamentos/wg-hub-icon.png" : "/cancelamentos/wg-hub-logo.png"}
-              alt="WG HUB Cancelamentos"
-              className={collapsed ? "h-12 w-12 shrink-0 object-contain" : "h-24 w-auto shrink-0"}
-            />
-          </Link>
-          <button
-            onClick={() => setOpen(false)}
-            aria-label="Fechar menu"
-            className="rounded-md p-1 text-(--color-graphite-500) hover:text-(--color-red-600) lg:hidden"
-          >
-            <IconX className="h-5 w-5" />
-          </button>
-        </div>
-
-        <ModulosWgHub collapsed={hydrated && collapsed} />
-
-        <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-3">
-          {items.map((item) => {
-            const active = pathname === item.href;
-            const ItemIcon = NAV_ICONS[item.iconKey];
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setOpen(false)}
-                title={collapsed ? item.label : undefined}
-                className={`flex items-center gap-2.5 rounded-md px-3 py-2 text-sm ${
-                  collapsed ? "lg:justify-center lg:px-0" : ""
-                } ${
-                  active
-                    ? "bg-(--color-red-50) text-(--color-red-600)"
-                    : "text-(--color-graphite-700) hover:bg-(--color-gray-50) hover:text-(--color-red-600)"
-                }`}
-              >
-                <ItemIcon className="h-4.5 w-4.5 shrink-0" />
-                <span className={collapsed ? "lg:hidden" : ""}>{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* Botão de recolher — só faz sentido no desktop (no mobile o menu
-            é uma gaveta que fecha sozinha). */}
-        <button
-          onClick={toggleCollapsed}
-          className={`hidden items-center gap-2 border-t border-(--color-gray-100) px-4 py-2.5 text-xs text-(--color-graphite-500) hover:bg-(--color-gray-50) hover:text-(--color-red-600) lg:flex ${
-            collapsed ? "lg:justify-center" : ""
-          }`}
-        >
-          {collapsed ? (
-            <IconChevronsRight className="h-4 w-4" />
-          ) : (
-            <>
-              <IconChevronsLeft className="h-4 w-4" />
-              Recolher menu
-            </>
-          )}
-        </button>
-
-        <div className={`border-t border-(--color-gray-200) px-4 py-3 ${collapsed ? "lg:px-2 lg:text-center" : ""}`}>
-          <Link
-            href="/perfil"
-            onClick={() => setOpen(false)}
-            className={`flex items-center gap-2 rounded-md hover:bg-(--color-gray-50) ${collapsed ? "lg:justify-center" : "-mx-1.5 px-1.5 py-1"}`}
-          >
-            <Avatar url={avatarUrl} name={fullName} size={28} />
-            <span className={collapsed ? "lg:hidden" : "min-w-0"}>
-              <p className="truncate text-sm font-medium text-(--color-graphite-900)">
-                {fullName}
-              </p>
-              <p className="truncate text-xs text-(--color-graphite-500)">{rolesText}</p>
-            </span>
-          </Link>
-          <div className={`mt-1 ${collapsed ? "lg:hidden" : ""}`}>
-            <SignOutButton />
-          </div>
-        </div>
-      </aside>
-    </>
+    </aside>
   );
 }
+
+// Barra do topo, como a do WG Hub: botão do menu (celular) e os avisos do
+// módulo (respostas do Compras e cutucadas) à direita.
+export function WgTopbar({ children }: { children?: React.ReactNode }) {
+  return (
+    <header className="wg-topbar">
+      <button
+        className="wg-icon-btn wg-menu-mobile"
+        title="Menu"
+        onClick={(e) => { e.stopPropagation(); document.body.classList.toggle("sb-aberta"); }}
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>
+      </button>
+      <div style={{ flex: 1 }} />
+      {children}
+    </header>
+  );
+}
+
