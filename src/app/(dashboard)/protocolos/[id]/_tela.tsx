@@ -36,6 +36,7 @@ const EVENT_TYPE_LABELS: Record<string, string> = {
   protocol_archived: "Protocolo arquivado",
   protocol_unarchived: "Protocolo desarquivado",
   protocol_cancelled: "Protocolo cancelado",
+  protocol_type_changed: "Tipo corrigido",
 };
 
 const RELATIONSHIP_TYPE_LABELS: Record<string, string> = {
@@ -56,7 +57,7 @@ async function ProtocoloDetalhePage({
   const { data: protocol, error: protocolError } = await supabase
     .from("protocols")
     .select(
-      `id, protocol_number, status, description, cancellation_scope,
+      `id, protocol_number, status, description, cancellation_scope, protocol_type_id, scope_id,
        financial_impact, refund_value, client_credit_value, customer_pays_difference, difference_value, total_value, opened_at, closed_at, due_at, opened_by, salesperson_id, archived_at, cancellation_reason, cash_register_finalized, needs_refund,
        protocol_types(name, code, requires_replacement_sale),
        branches(name, code),
@@ -246,6 +247,14 @@ async function ProtocoloDetalhePage({
       currentUser.roles.includes("gerencia_geral") ||
       currentUser.roles.includes("administrador"));
 
+  // correção do tipo na aprovação (antes de existirem tarefas)
+  const [{ data: tiposCorrecao }, { data: escoposCorrecao }] = canDecideApproval
+    ? await Promise.all([
+        supabase.from("protocol_types").select("id, code, name, description, requires_delivered_product_approval, requires_scope").eq("active", true).order("sort_order"),
+        supabase.from("protocol_scopes").select("id, code, name").eq("active", true).order("sort_order"),
+      ])
+    : [{ data: null }, { data: null }];
+
   const canRespondToInfoRequest =
     approval &&
     approval.status === "aguardando_informacao" &&
@@ -342,6 +351,12 @@ async function ProtocoloDetalhePage({
         canDecideApproval && (
         <ApprovalBox
           approvalId={approval.id}
+          protocolId={protocol.id}
+          tipoAtualId={protocol.protocol_type_id}
+          temEscopo={Boolean(protocol.scope_id)}
+          tipos={(tiposCorrecao ?? []) as never}
+          escopos={escoposCorrecao ?? []}
+          podeCorrigirTipo={!(tasks ?? []).length}
           requiredRoleLabel={
             ROLE_LABELS[approval.required_role as RoleName] ??
             approval.required_role
@@ -752,6 +767,12 @@ async function ProtocoloDetalhePage({
                 <p className="text-(--color-graphite-900)">
                   {EVENT_TYPE_LABELS[ev.event_type] ?? ev.event_type}
                 </p>
+                {ev.event_type === "protocol_type_changed" && ev.payload && (
+                  <p className="text-xs text-(--color-graphite-700)">
+                    De “{String((ev.payload as Record<string, unknown>).from ?? "")}” para “{String((ev.payload as Record<string, unknown>).to ?? "")}”
+                    {(ev.payload as Record<string, unknown>).reason ? ` — ${String((ev.payload as Record<string, unknown>).reason)}` : ""}
+                  </p>
+                )}
                 <p className="protocol-stamp text-xs text-(--color-graphite-500)">
                   {new Date(ev.created_at).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}
                   {actor?.full_name ? ` — ${actor.full_name}` : " — sistema"}

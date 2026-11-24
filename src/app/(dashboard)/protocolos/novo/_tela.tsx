@@ -14,7 +14,7 @@ async function NovaSolicitacaoPage() {
       supabase.from("companies").select("id").eq("active", true).order("created_at").limit(1),
       supabase
         .from("protocol_types")
-        .select("id, code, name, requires_delivered_product_approval, requires_scope")
+        .select("id, code, name, description, requires_delivered_product_approval, requires_scope")
         .eq("active", true)
         .order("sort_order"),
       supabase

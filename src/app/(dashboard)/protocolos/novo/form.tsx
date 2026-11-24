@@ -5,12 +5,13 @@ import { useRouter } from "@/lib/navegacao";
 import { createClient } from "@/lib/supabase/client";
 import { ProtocolBadge } from "@/components/ProtocolBadge";
 import { PdfImportBox } from "./pdf-import-box";
+import { TipoGuiado } from "./tipo-guiado";
 import { CurrencyInput } from "@/components/CurrencyInput";
 import { InfoTooltip } from "@/components/InfoTooltip";
 import type { ParsedPdfSale } from "@/lib/pdf-import";
 
 type Branch = { id: string; name: string; code: string; address?: string | null };
-type ProtocolType = { id: string; code: string; name: string; requires_delivered_product_approval: boolean; requires_scope: boolean };
+type ProtocolType = { id: string; code: string; name: string; description?: string | null; requires_delivered_product_approval: boolean; requires_scope: boolean };
 type Reason = { id: string; category: string; name: string };
 type Subreason = { id: string; reason_id: string; name: string };
 type Scope = { id: string; code: string; name: string };
@@ -351,7 +352,7 @@ export function NovaSolicitacaoForm({ currentUserId, branches: initialBranches, 
   }
 
   function validate(): string | null {
-    if (!protocolTypeId) return "Selecione o tipo de protocolo.";
+    if (!protocolTypeId) return "Responda as perguntas do tipo (o cliente continua com alguma compra? o produto já foi entregue?).";
     if (!saleNumber.trim()) return "Informe o número da venda.";
     if (!branchId) return "Selecione a filial.";
     if (!saleDate) return "Informe a data da venda.";
@@ -720,12 +721,11 @@ export function NovaSolicitacaoForm({ currentUserId, branches: initialBranches, 
             <h2 className="mb-4 text-sm font-medium text-(--color-graphite-900)">O que será devolvido</h2>
 
             <div className="space-y-4">
-              <Field label="Tipo de protocolo *">
-                <select value={protocolTypeId} onChange={(e) => { setProtocolTypeId(e.target.value); setScopeId(""); }} className={selectClass}>
-                  <option value="">Selecione...</option>
-                  {protocolTypes.map((t) => (<option key={t.id} value={t.id}>{t.name}</option>))}
-                </select>
-              </Field>
+              <TipoGuiado
+                tipos={protocolTypes}
+                value={protocolTypeId}
+                onChange={(id) => { if (id !== protocolTypeId) { setProtocolTypeId(id); setScopeId(""); } }}
+              />
 
               {requiresScope && (
                 <Field label="Escopo *">
