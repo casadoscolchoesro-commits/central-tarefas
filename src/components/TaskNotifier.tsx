@@ -7,22 +7,40 @@ import { playMessageSound } from "@/lib/sounds";
 
 const LOG_PREFIX = "[nova tarefa]";
 
+type TaskRow = {
+  id: string;
+  department: TaskDepartment | null;
+  status: string;
+  assigned_to_user_id?: string | null;
+  assigned_to_job_title_id?: string | null;
+};
+
 export function TaskNotifier({
   myDepartments,
+  currentUserId,
+  myJobTitleId,
 }: {
   myDepartments: TaskDepartment[] | "all";
+  currentUserId?: string;
+  myJobTitleId?: string | null;
 }) {
   // Guarda a versão mais recente sem forçar re-inscrição no canal.
   const departmentsRef = useRef(myDepartments);
   departmentsRef.current = myDepartments;
+  const meRef = useRef({ currentUserId, myJobTitleId });
+  meRef.current = { currentUserId, myJobTitleId };
   const seenIdsRef = useRef<Set<string>>(new Set());
   const startedAtRef = useRef(new Date().toISOString());
 
   useEffect(() => {
     const supabase = createClient();
 
-    function isForMe(row: { department: TaskDepartment | null; status: string }) {
+    function isForMe(row: TaskRow) {
       if (row.status !== "pendente") return false;
+      // tarefa direcionada a mim ou à minha função (com ou sem setor)
+      const me = meRef.current;
+      if (row.assigned_to_user_id) return row.assigned_to_user_id === me.currentUserId;
+      if (row.assigned_to_job_title_id && me.myJobTitleId && row.assigned_to_job_title_id === me.myJobTitleId) return true;
       if (!row.department) return false;
       const mine = departmentsRef.current;
       // Administrador/gerência geral têm alcance "geral" — também
@@ -30,7 +48,7 @@ export function TaskNotifier({
       return mine === "all" || mine.includes(row.department);
     }
 
-    function handleTask(row: { id: string; department: TaskDepartment | null; status: string }, source: string) {
+    function handleTask(row: TaskRow, source: string) {
       if (seenIdsRef.current.has(row.id)) return;
       seenIdsRef.current.add(row.id);
       const mine = isForMe(row);
@@ -44,7 +62,7 @@ export function TaskNotifier({
         "postgres_changes",
         { event: "INSERT", schema: "cancelamentos", table: "tasks" },
         (payload) => {
-          handleTask(payload.new as { id: string; department: TaskDepartment | null; status: string }, "tempo real");
+          handleTask(payload.new as TaskRow, "tempo real");
         }
       )
       .subscribe((status, err) => {
@@ -56,7 +74,7 @@ export function TaskNotifier({
     const pollInterval = setInterval(async () => {
       const { data, error } = await supabase
         .from("tasks")
-        .select("id, department, status, created_at")
+        .select("id, department, status, assigned_to_user_id, assigned_to_job_title_id, created_at")
         .eq("status", "pendente")
         .gt("created_at", startedAtRef.current)
         .order("created_at", { ascending: true })

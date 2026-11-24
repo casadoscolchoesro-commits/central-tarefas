@@ -59,7 +59,7 @@ async function DashboardLayout({
         initial={{ enabled: maintenance?.manutencao ?? false, message: maintenance?.mensagem ?? null }}
         isAdmin={user.roles.includes("administrador")}
       />
-      <TaskNotifier myDepartments={myDepartments} />
+      <TaskNotifier myDepartments={myDepartments} currentUserId={user.id} myJobTitleId={myProfile?.job_title_id ?? null} />
       <NudgeListener
         currentUserId={user.id}
         myDepartments={myDepartments}
