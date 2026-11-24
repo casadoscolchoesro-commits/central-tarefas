@@ -18,6 +18,8 @@ export async function getEffectiveVisibilityScopes(
   isAdminOrGerencia: boolean,
 ): Promise<{ protocolScope: VisibilityScope; taskScope: VisibilityScope }> {
   if (isAdminOrGerencia) return { protocolScope: "all", taskScope: "all" };
+  // Sem sessão ainda (id vazio): não consulta — o banco recusaria "" como uuid.
+  if (!userId) return FALLBACK_SCOPES;
 
   try {
     const supabase = await createClient();
